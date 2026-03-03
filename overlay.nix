@@ -38,7 +38,8 @@ final: prev: {
     xlnx-vcu-modules = kprev.callPackage ./pkgs/vcu-modules.nix { };
     mali-module-xlnx = kprev.callPackage ./pkgs/mali-module-xlnx.nix { };
     xlnx-dma-proxy = kprev.callPackage ./pkgs/dma-proxy.nix { };
-    bperez77-xilinx-axidma = kprev.callPackage ./pkgs/xilinx-axidma.nix { };
+    bperez77-xilinx-axidma = kprev.callPackage ./pkgs/xilinx-axidma.nix { version = "bperez77"; };
+    vincent-xilinx-axidma = kprev.callPackage ./pkgs/xilinx-axidma.nix { version = "vincent290587"; };
     jacobfeder-axisfifo = kprev.callPackage ./pkgs/axisfifo.nix { };
     digilent-hdmi = kprev.callPackage ./pkgs/digilent-hdmi.nix { };
     digilent-dynclk = kprev.callPackage ./pkgs/digilent-dynclk.nix { };

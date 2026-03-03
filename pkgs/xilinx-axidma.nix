@@ -6,6 +6,8 @@
   kernel,
   which,
   doxygen,
+
+  version,
 }:
 
 stdenv.mkDerivation {
@@ -18,22 +20,40 @@ stdenv.mkDerivation {
     "drivers"
   ];
 
-  src = fetchFromGitHub {
-    owner = "bperez77";
-    repo = "xilinx_axidma";
-    rev = "42ed91e83bc4da1e29149b2be0c6a6b8f4549222";
-    hash = "sha256-Mmd7CLYskk2vqbhE7rQE3VGCpE+KyJPyLRMOoi63MoY=";
-  };
-  patches = [
-    (fetchpatch {
-      url = "https://github.com/neutralinsomniac/xilinx_axidma/commit/2bdc88cf4acd25a1323385a78745f4bb1b4adaf2.patch";
-      hash = "sha256-qYRR1tSqcvdHfcUooKznN+yyGmbTKgn0RDyyPKl0Z/I=";
-    })
-    (fetchpatch {
-      url = "https://github.com/chuangzhu/xilinx_axidma/commit/d97ddd12bac89d98b836c624f603775f29594d44.patch";
-      hash = "sha256-Y7ZZpqMchgM371KKJ/p+RQq3jY3ncut9HpW6H7S+kSk=";
-    })
-  ];
+  src =
+    {
+      "bperez77" = fetchFromGitHub {
+        owner = "bperez77";
+        repo = "xilinx_axidma";
+        rev = "42ed91e83bc4da1e29149b2be0c6a6b8f4549222";
+        hash = "sha256-Mmd7CLYskk2vqbhE7rQE3VGCpE+KyJPyLRMOoi63MoY=";
+      };
+
+      "vincent290587" = fetchFromGitHub {
+        owner = "vincent290587";
+        repo = "xilinx_axidma";
+        rev = "89cd6eb8559624b88060af1b99defe1e2d0f3e6d";
+        hash = "sha256-5oNemCOlE8gsJWtuvpqk1uiSYUgD8BBdrOPIuUxKXv4=";
+      };
+    }
+    .${version};
+
+  patches =
+    {
+      "bperez77" = [
+        (fetchpatch {
+          url = "https://github.com/neutralinsomniac/xilinx_axidma/commit/2bdc88cf4acd25a1323385a78745f4bb1b4adaf2.patch";
+          hash = "sha256-qYRR1tSqcvdHfcUooKznN+yyGmbTKgn0RDyyPKl0Z/I=";
+        })
+        (fetchpatch {
+          url = "https://github.com/chuangzhu/xilinx_axidma/commit/d97ddd12bac89d98b836c624f603775f29594d44.patch";
+          hash = "sha256-Y7ZZpqMchgM371KKJ/p+RQq3jY3ncut9HpW6H7S+kSk=";
+        })
+      ];
+
+      "vincent290587" = [ ./vincent-xilinx-axidma.diff ];
+    }
+    .${version};
 
   nativeBuildInputs = kernel.moduleBuildDependencies ++ [
     which
