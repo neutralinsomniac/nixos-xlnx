@@ -1,0 +1,289 @@
+diff --git a/driver/axi_dma.c b/driver/axi_dma.c
+index 2961f84c00..32a4769a6d 100644
+--- a/driver/axi_dma.c
++++ b/driver/axi_dma.c
+@@ -77,16 +77,16 @@
+ 
+     // Create a unique name: "axidma0", "axidma1", etc.
+     // We allocate space for the base name + digits
+-    rc = strlen(chrdev_name) + 10;
+-    axidma_dev->chrdev_name = kmalloc(rc, GFP_KERNEL);
+-    if (axidma_dev->chrdev_name == NULL) {
+-        axidma_err("Unable to allocate the AXI DMA chardev name string.\n");
+-        rc = -ENOMEM;
+-        goto destroy_dma_dev;
+-    }
++    // rc = strlen(chrdev_name) + 10;
++    // axidma_dev->chrdev_name = kmalloc(rc, GFP_KERNEL);
++    // if (axidma_dev->chrdev_name == NULL) {
++    //     axidma_err("Unable to allocate the AXI DMA chardev name string.\n");
++    //     rc = -ENOMEM;
++    //     goto destroy_dma_dev;
++    // }
+ 
+     // Format the name with the unique index
+-    snprintf(axidma_dev->chrdev_name, rc, "%s%d", chrdev_name, current_idx);
++    // snprintf(axidma_dev->chrdev_name, rc, "%s%d", chrdev_name, current_idx);
+     axidma_info("Probing AXI DMA instance %d as %s\n", current_idx, axidma_dev->chrdev_name);
+ 
+     // Initialize the character device (registers /dev/axidmaX)
+@@ -103,8 +103,8 @@
+ 
+ destroy_dma_dev:
+     axidma_dma_exit(axidma_dev);
+-    if (axidma_dev->chrdev_name != chrdev_name) // Only free if we allocated it
+-        kfree(axidma_dev->chrdev_name);
++    // if (axidma_dev->chrdev_name != chrdev_name) // Only free if we allocated it
++    //     kfree(axidma_dev->chrdev_name);
+ free_axidma_dev:
+     kfree(axidma_dev);
+     return rc;
+@@ -124,8 +124,8 @@
+     axidma_dma_exit(axidma_dev);
+ 
+     // Free the device structure
+-    if (axidma_dev->chrdev_index > 0)
+-        kfree(axidma_dev->chrdev_name);
++    // if (axidma_dev->chrdev_index > 0)
++    //     kfree(axidma_dev->chrdev_name);
+ 
+     kfree(axidma_dev);
+     return;
+diff --git a/driver/axidma_chrdev.c b/driver/axidma_chrdev.c
+index 357bdd49ab..c2c932fdcb 100644
+--- a/driver/axidma_chrdev.c
++++ b/driver/axidma_chrdev.c
+@@ -307,7 +307,7 @@
+     // Do not copy this memory region if this process is forked.
+     /* TODO: Figure out the proper way to actually handle multiple processes
+      * referring to the DMA buffer. */
+-    //vma->vm_flags |= VM_DONTCOPY;
++    vm_flags_set(vma, VM_DONTCOPY);
+ 
+     // Add the allocation to the driver's list of DMA buffers
+     list_add(&dma_alloc->list, &dev->dmabuf_list);
+diff --git a/driver/axidma_dma.c b/driver/axidma_dma.c
+index fcf12fb45a..b79feba02b 100644
+--- a/driver/axidma_dma.c
++++ b/driver/axidma_dma.c
+@@ -397,7 +397,7 @@
+         axidma_err("Could not prepare RX transfer chan %d", trans->channel_id);
+         return rc;
+     }
+-    axidma_info("RX transfer setup chan %d", trans->channel_id);
++    // axidma_info("RX transfer setup chan %d", trans->channel_id);
+ 
+     // Submit the receive transfer, and wait for it to complete
+     rc = axidma_start_transfer(rx_chan, &rx_tfr);
+@@ -450,7 +450,7 @@
+         axidma_err("Could not prepare TX transfer chan %d", trans->channel_id);
+         return rc;
+     }
+-    axidma_info("TX transfer setup chan %d", trans->channel_id);
++    // axidma_info("TX transfer setup chan %d", trans->channel_id);
+ 
+     // Submit the transmit transfer, and wait for it to complete
+     rc = axidma_start_transfer(tx_chan, &tx_tfr);
+@@ -635,7 +635,7 @@
+ 
+         return 0;
+     }
+-    
++
+     return -ENODEV;
+ }
+ 
+diff --git a/driver/axidma_of.c b/driver/axidma_of.c
+index e6843e26db..cc0a9c2ec4 100644
+--- a/driver/axidma_of.c
++++ b/driver/axidma_of.c
+@@ -47,9 +47,9 @@
+         chan->dir = AXIDMA_READ;
+         dev->num_vdma_rx_chans += 1;
+     } else if (of_find_property(np, "compatible", NULL) == NULL) {
+-        axidma_node_err(np, "DMA channel lacks 'compatible' property.\n");
++        printk(KERN_ERR "DMA channel lacks 'compatible' property.\n");
+     } else {
+-        axidma_node_err(np, "DMA channel has an invalid 'compatible' "
++        printk(KERN_ERR "DMA channel has an invalid 'compatible' "
+                         "property.\n");
+         axidma_err("The 'compatible' property must be one of: {"
+                    "xlnx,axi-dma-mm2s-channel, xlnx,axi-dma-mm2s-channel, "
+@@ -69,7 +69,7 @@
+     rc = of_property_read_string_index(driver_node, "dma-names", index,
+                                        &chan->name);
+     if (rc < 0) {
+-        axidma_node_err(driver_node, "Unable to read DMA name %d from the "
++        printk(KERN_ERR "Unable to read DMA name %d from the "
+                         "'dma-names' property.\n", index);
+         return -EINVAL;
+     }
+@@ -77,6 +77,23 @@
+     return 0;
+ }
+ 
++static int axidma_of_parse_chrdev_name(struct device_node *driver_node,
++                                    struct axidma_device *dev)
++{
++    int rc;
++
++    // Parse the character device name from the 'chrdev-name' property
++    rc = of_property_read_string(driver_node, "chrdev-name", (const char**)&dev->chrdev_name);
++    if (rc < 0) {
++        axidma_node_err(driver_node, "Unable to read name from the "
++                        "'chrdev-name' property.\n");
++        return -EINVAL;
++    }
++
++    return 0;
++}
++
++
+ static int axidma_of_parse_channel(struct device_node *dma_node, int channel,
+         struct axidma_chan *chan, struct axidma_device *dev)
+ {
+@@ -86,29 +103,30 @@
+ 
+     // Verify that the DMA node has two channel (child) nodes, one for TX and RX
+     if (of_get_child_count(dma_node) < 1) {
+-        axidma_node_err(dma_node, "DMA does not have any channel nodes.\n");
++        printk(KERN_ERR "DMA does not have any channel nodes.\n");
+         return -EINVAL;
+     } else if (of_get_child_count(dma_node) > 2) {
+-        axidma_node_err(dma_node, "DMA has more than two channel nodes.\n");
++        printk(KERN_ERR "DMA has more than two channel nodes.\n");
+         return -EINVAL;
+     }
+ 
+     // Go to the child node that we're parsing
+     dma_chan_node = of_get_next_child(dma_node, NULL);
+-    if (channel == 1) {
+-        dma_chan_node = of_get_next_child(dma_node, dma_chan_node);
+-    }
++    // if (channel == 1) {
++    //     dma_chan_node = of_get_next_child(dma_node, dma_chan_node);
++    // }
+ 
+     // Check if the specified node exists
+     if (dma_chan_node == NULL) {
+-        axidma_node_err(dma_chan_node, "Unable to find child node number %d.\n",
++        printk(KERN_ERR "Unable to find child node number %d.\n",
+                 channel);
++        return -EINVAL;
+     }
+ 
+     // Read out the channel's unique device id, and put it in the structure
+     if (of_find_property(dma_chan_node, "xlnx,device-id", NULL) == NULL) {
+-        axidma_node_err(dma_chan_node, "DMA channel is missing the "
+-                        "'xlnx,device-id' property.\n");
++        printk(KERN_INFO "inside error case!\n");
++        printk(KERN_ERR "DMA channel is missing xlnx,device-id");
+         return -EINVAL;
+     }
+ 
+@@ -165,36 +183,36 @@
+ 
+     // Check that the device tree node has the 'dmas' and 'dma-names' properties
+     if (of_find_property(driver_node, "dma-names", NULL) == NULL) {
+-        axidma_node_err(driver_node, "Property 'dma-names' is missing.\n");
++        printk(KERN_ERR "Property 'dma-names' is missing.\n");
+         return -EINVAL;
+     } else if (of_find_property(driver_node, "dmas", NULL) == NULL) {
+-        axidma_node_err(driver_node, "Property 'dmas' is missing.\n");
++        printk(KERN_ERR "Property 'dmas' is missing.\n");
+         return -EINVAL;
+     }
+ 
+     // Get the length of the properties, and make sure they are not empty
+     num_dma_names = of_property_count_strings(driver_node, "dma-names");
+     if (num_dma_names < 0) {
+-        axidma_node_err(driver_node, "Unable to get the 'dma-names' property "
++        printk(KERN_ERR "Unable to get the 'dma-names' property "
+                         "length.\n");
+         return -EINVAL;
+     } else if (num_dma_names == 0) {
+-        axidma_node_err(driver_node, "'dma-names' property is empty.\n");
++        printk(KERN_ERR "'dma-names' property is empty.\n");
+         return -EINVAL;
+     }
+     num_dmas = of_count_phandle_with_args(driver_node, "dmas", "#dma-cells");
+     if (num_dmas < 0) {
+-        axidma_node_err(driver_node, "Unable to get the 'dmas' property "
++        printk(KERN_ERR "Unable to get the 'dmas' property "
+                         "length.\n");
+         return -EINVAL;
+     } else if (num_dmas == 0) {
+-        axidma_node_err(driver_node, "'dmas' property is empty.\n");
++        printk(KERN_ERR "'dmas' property is empty.\n");
+         return -EINVAL;
+     }
+ 
+     // Check that the number of entries in each property matches
+     if (num_dma_names != num_dmas) {
+-        axidma_node_err(driver_node, "Length of 'dma-names' and 'dmas' "
++        printk(KERN_ERR "Length of 'dma-names' and 'dmas' "
+                         "properties differ.\n");
+         return -EINVAL;
+     }
+@@ -223,10 +241,16 @@
+ 
+     if (rc < 0) {
+         if (rc != -EINVAL)
+-            axidma_node_err(driver_node, "Invalid index property, ignoring.\n");
++            printk(KERN_ERR "Invalid index property, ignoring.\n");
+         dev->chrdev_index = -1;
+     }
+ 
++    // Get the character device name
++    rc = axidma_of_parse_chrdev_name(driver_node, dev);
++    if (rc < 0) {
++        return rc;
++    }
++
+     /* For each DMA channel specified in the device tree, parse out the
+      * information about the channel, namely its direction and type. */
+     for (i = 0; i < dev->num_chans; i++)
+@@ -235,7 +259,7 @@
+         rc = of_parse_phandle_with_args(driver_node, "dmas", "#dma-cells", i,
+                                         &phandle_args);
+         if (rc < 0) {
+-            axidma_node_err(driver_node, "Unable to get phandle %d from the "
++            printk(KERN_ERR "Unable to get phandle %d from the "
+                             "'dmas' property.\n", i);
+             return rc;
+         }
+@@ -244,26 +268,26 @@
+         dma_node = phandle_args.np;
+         channel = phandle_args.args[0];
+         if (phandle_args.args_count < 1) {
+-            axidma_node_err(driver_node, "Phandle %d in the 'dmas' property is "
++            printk(KERN_ERR "Phandle %d in the 'dmas' property is "
+                             "is missing the channel direciton argument.\n", i);
+             return -EINVAL;
+         } else if (channel != 0 && channel != 1) {
+-            axidma_node_err(driver_node, "Phandle %d in the 'dmas' property "
++            printk(KERN_ERR "Phandle %d in the 'dmas' property "
+                             "has an invalid channel (argument 0).\n", i);
+             return -EINVAL;
+         }
+ 
++        // Parse the name of the channel
++        rc = axidma_of_parse_dma_name(driver_node, i, &dev->channels[i]);
++        if (rc < 0) {
++            return rc;
++        }
++
+         // Parse out the information about the channel
+         rc = axidma_of_parse_channel(dma_node, channel, &dev->channels[i], dev);
+         if (rc < 0) {
+             return rc;
+         }
+-
+-        // Parse the name of the channel
+-        rc = axidma_of_parse_dma_name(driver_node, i, &dev->channels[i]);
+-        if (rc < 0) {
+-            return rc;
+-        }
+     }
+ 
+     // Check that all channels have unique channel ID's
